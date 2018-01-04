@@ -23,6 +23,7 @@
 ### Chat/Console Commands
 
 - /ban `<name/steamID/IP/RangeIP>` `<optional: time>` `<optional: reason>`
+
 If no time is given the ban is permanently.
 
 ### Examples
@@ -40,7 +41,7 @@ If no time is given the ban is permanently.
 
 The config offers options to set different permissions for every command so you can control which user can use which commands.
 
-### Default permissions are:
+### Default Permissions
 
 - ban - enhancedbansystem.ban
 - unban - enhancedbansystem.unban
