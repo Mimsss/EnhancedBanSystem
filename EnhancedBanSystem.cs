@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 
 namespace Oxide.Plugins
 {
-    [Info("EnhancedBanSystem", "Reneb/Slut", "5.1.12", ResourceId = 1951)]
+    [Info("EnhancedBanSystem", "Reneb/Slut", "5.1.13", ResourceId = 1951)]
     class EnhancedBanSystem : CovalencePlugin
     {
         [PluginReference]
