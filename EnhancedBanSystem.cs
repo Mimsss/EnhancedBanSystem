@@ -741,20 +741,19 @@ namespace Oxide.Plugins
             }
             else
             {
-                unbanList = cachedBans.Values.Where(x => x.name == name).ToList();
-                if (unbanList.Count == 0)
+                var list = cachedBans.Values.Where(x => x.name.ToLower().Equals(name.ToLower())).ToList();
+                if (list.Count > 1)
                 {
-                    var lname = name.ToLower();
-                    unbanList = cachedBans.Values.Where(x => x.name.ToLower().Contains(lname)).ToList();
-                    if (unbanList.Count > 1)
+                    var ret = FormatReturn(BanSystem.Files, GetMsg("MultipleBans"));
+                    foreach (var b in list)
                     {
-                        var ret = FormatReturn(BanSystem.Files, GetMsg("MultipleBans"));
-                        foreach (var b in unbanList)
-                        {
-                            ret += string.Format("{0} - {1} - {2}\n\r", b.steamid, b.name, b.reason);
-                        }
-                        return ret;
+                        ret += string.Format("{0} - {1} - {2}\n\r", b.steamid, b.name, b.reason);
                     }
+                    return ret;
+                }
+                else
+                {
+                    unbanList = list;
                 }
             }
             return Files_RawUnban(unbanList);
@@ -1808,15 +1807,12 @@ namespace Oxide.Plugins
             if (player.IsBanned) return FormatReturn(BanSystem.Native, GetMsg("BanExists"), bandata.steamid.ToString());
 
             TimeSpan duration = bandata.expire == 0.0 ? default(TimeSpan) : TimeSpan.FromSeconds(bandata.expire);
-#if RUST
-            if(bandata.expire == 0.0)
-            {
-                player.Ban(bandata.reason);
-            }
-#else
             player.Ban(bandata.reason, duration);
-#endif
+#if RUST
+            return FormatReturn(BanSystem.Native, GetMsg("BanAdded"), bandata.steamid.ToString()) + "\nWARNING: NATIVE temporary bans are not supported in RUST! Temporary bans will stay permanent";
+#else
             return FormatReturn(BanSystem.Native, GetMsg("BanAdded"), bandata.steamid.ToString());
+#endif
         }
 
         string Native_ExecuteUnban(string steamid, string name)
@@ -2172,8 +2168,6 @@ namespace Oxide.Plugins
             {
                 reason = string.Join(" ", args.Skip(1).ToArray());
             }
-
-
             if (ipaddress.Length != 0)
             {
                 return BanIP(source, ipaddress, reason, duration);
@@ -2216,6 +2210,7 @@ namespace Oxide.Plugins
         string PrepareBan(object source, string userID, string name, string ip, string reason, double duration, bool kick)
         {
             var bandata = new BanData(source, userID, name, ip, reason, duration);
+
 
             return ExecuteBan(source, bandata, kick);
         }
@@ -2324,7 +2319,7 @@ namespace Oxide.Plugins
                 if (cachedBans.ContainsKey(b.id))
                     cachedBans.Remove(b.id);
             }
-
+            OnServerSave();
             return returnstring;
         }
 
