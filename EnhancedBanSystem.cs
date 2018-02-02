@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 
 namespace Oxide.Plugins
 {
-    [Info("EnhancedBanSystem", "Reneb/Slut", "5.1.13", ResourceId = 1951)]
+    [Info("EnhancedBanSystem", "Reneb/Slut", "5.1.14", ResourceId = 1951)]
     class EnhancedBanSystem : CovalencePlugin
     {
         [PluginReference]
@@ -1922,7 +1922,7 @@ namespace Oxide.Plugins
                         new{name="Reason", value=reason, inline=false}
                     };
                     string json = JsonConvert.SerializeObject(payload);
-                    DiscordMessages.Call("API_SendFancyMessage", Discord_Webhook, "Player Kick", 0, json);
+                    DiscordMessages.Call("API_SendFancyMessage", Discord_Webhook, "Player Kick", json);
                 }
             }
 
@@ -2268,7 +2268,7 @@ namespace Oxide.Plugins
                     new {name="Reason",value=bandata.reason, inline=false}
                 };
                 string json = JsonConvert.SerializeObject(payload);
-                DiscordMessages.Call("API_SendFancyMessage", Discord_Webhook, "Player Ban", 0, json);
+                DiscordMessages.Call("API_SendFancyMessage", Discord_Webhook, "Player Ban", json);
             }
             timer.Once(5f, () => { Subscribe(nameof(OnUserBanned)); });
             return returnstring;
