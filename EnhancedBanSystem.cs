@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 
 namespace Oxide.Plugins
 {
-    [Info("EnhancedBanSystem", "Reneb/Slut", "5.2.1", ResourceId = 1951)]
+    [Info("EnhancedBanSystem", "Reneb/Slut", "5.2.2", ResourceId = 1951)]
     class EnhancedBanSystem : CovalencePlugin
     {
         [PluginReference]
@@ -291,6 +291,18 @@ namespace Oxide.Plugins
         // General Methods
         ////////////////////////////////////////////////////////////
 
+
+        private bool IsPluginLoaded(Plugin plugin)
+        {
+            if (plugin != null)
+            {
+                return plugins.GetAll().Where(x => x.Equals(plugin) && x.IsLoaded) != null;
+            }
+            else
+            {
+                return false;
+            }
+        }
         string FormatTime(TimeSpan time) => $"{(time.Days == 0 ? string.Empty : $"{time.Days} day(s)")}{(time.Days != 0 && time.Hours != 0 ? $", " : string.Empty)}{(time.Hours == 0 ? string.Empty : $"{time.Hours} hour(s)")}{(time.Hours != 0 && time.Minutes != 0 ? $", " : string.Empty)}{(time.Minutes == 0 ? string.Empty : $"{time.Minutes} minute(s)")}{(time.Minutes != 0 && time.Seconds != 0 ? $", " : string.Empty)}{(time.Seconds == 0 ? string.Empty : $"{time.Seconds} second(s)")}";
 
         private bool TryParseTimeSpan(string source, out TimeSpan timeSpan)
@@ -561,7 +573,7 @@ namespace Oxide.Plugins
 
             Interface.Oxide.LogInfo(returnstring);
 
-            if (Discord_use && (plugins.GetAll().FirstOrDefault(x => x.Name.Equals("DiscordMessages") && x.IsLoaded) == null || Discord_Webhook.Equals("https://support.discordapp.com/hc/en-us/articles/228383668-Intro-to-Webhooks")))
+            if (Discord_use && (!IsPluginLoaded(DiscordMessages) || Discord_Webhook.Equals("https://support.discordapp.com/hc/en-us/articles/228383668-Intro-to-Webhooks")))
             {
                 LogError("DiscordMessages enabled but it isn't setup correctly.");
                 Discord_use = false;
@@ -910,13 +922,11 @@ namespace Oxide.Plugins
         class StoredIPData
         {
             public HashSet<string> Banlist = new HashSet<string>();
-
-            public StoredIPData() { }
         }
 
         string PlayerDatabase_Load()
         {
-            if (PlayerDatabase == null) return FormatReturn(BanSystem.PlayerDatabase, "Missing plugin: oxidemod.org/threads/playerdatabase.18409/");
+            if (!IsPluginLoaded(PlayerDatabase)) return FormatReturn(BanSystem.PlayerDatabase, "Missing plugin: oxidemod.org/threads/playerdatabase.18409/");
             try
             {
                 storedIPData = Interface.Oxide.DataFileSystem.ReadObject<StoredIPData>(PlayerDatabase_IPFile);
@@ -925,11 +935,14 @@ namespace Oxide.Plugins
             {
                 storedIPData = new StoredIPData();
             }
-            foreach (var b in storedIPData.Banlist)
+            if (storedIPData.Banlist.Count > 0)
             {
-                var bd = JsonConvert.DeserializeObject<BanData>(b);
-                if (!cachedBans.ContainsKey(bd.id))
-                    cachedBans.Add(bd.id, bd);
+                foreach (var b in storedIPData.Banlist)
+                {
+                    var bd = JsonConvert.DeserializeObject<BanData>(b);
+                    if (!cachedBans.ContainsKey(bd.id))
+                        cachedBans.Add(bd.id, bd);
+                }
             }
             var getKnownPlayers = (List<string>)PlayerDatabase.Call("GetAllKnownPlayers");
             if (getKnownPlayers == null) return FormatReturn(BanSystem.PlayerDatabase, "Error P01");
