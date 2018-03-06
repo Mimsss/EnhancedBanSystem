@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 
 namespace Oxide.Plugins
 {
-    [Info("EnhancedBanSystem", "Reneb/Slut", "5.2.2", ResourceId = 1951)]
+    [Info("EnhancedBanSystem", "Reneb/Slut", "5.2.3", ResourceId = 1951)]
     class EnhancedBanSystem : CovalencePlugin
     {
         [PluginReference]
@@ -158,13 +158,13 @@ namespace Oxide.Plugins
                 { "PlayerNotFound", "No matching player was found.\n" },
                 { "PlayerTempBanned", "You are temporarily banned from this server ({0}). {1} left" },
                 { "PlayerPermBanned", "You are permanently banned from this server ({0})." },
-                {"LoadedBans","Loaded {0} bans\n\r" },
+                {"LoadedBans","Loaded {0} bans" },
                 {"BanExists","This ban already exists ({0})." },
                 {"BanAdded","Successfully added {0} to the banlist." },
                 {"MultipleBans","Multiple Bans Found:\n\r" },
                 {"BansRemoved","{0} matching bans were removed" },
                 {"PlayerNotBanned","{0} - {1} isn't banned.\n" },
-                {"Loaded","Loaded\n\r" },
+                {"Loaded","Loaded" },
                 {"NoPermission","You don't have the permission to use this command." },
                 {"KickSyntax","Syntax: kick < Name | SteamID | IP | IP Range > < reason(optional) >" },
                 {"UnbanSyntax","Syntax: unban < Name | SteamID | IP | IP Range >" },
@@ -533,34 +533,34 @@ namespace Oxide.Plugins
         void OnServerInitialized()
         {
             Load_ID();
-            string returnstring = string.Empty;
+            List<string> returnString = new List<string>();
 
             if (BanSystemHasFlag(banSystem, BanSystem.PlayerDatabase))
             {
-                returnstring += PlayerDatabase_Load();
+                 returnString.Add(PlayerDatabase_Load());
             }
             if (BanSystemHasFlag(banSystem, BanSystem.Files))
             {
-                returnstring += Files_Load();
+                returnString.Add(Files_Load());
             }
             if (BanSystemHasFlag(banSystem, BanSystem.MySQL))
             {
-                returnstring += MySQL_Load();
+                returnString.Add(MySQL_Load());
             }
             if (BanSystemHasFlag(banSystem, BanSystem.SQLite))
             {
-                returnstring += SQLite_Load();
+                returnString.Add(SQLite_Load());
             }
             if (BanSystemHasFlag(banSystem, BanSystem.WebAPI))
             {
-                returnstring += WebAPI_Load();
+                returnString.Add(WebAPI_Load());
             }
             if (BanSystemHasFlag(banSystem, BanSystem.Native))
             {
-                returnstring += Native_Load();
+                returnString.Add(Native_Load());
             }
 
-            if (returnstring == string.Empty)
+            if (returnString.Count == 0)
             {
                 this.LogWarning("You must enable at least one Ban System to use this plugin!");
                 Interface.Oxide.UnloadPlugin(Name);
@@ -571,7 +571,7 @@ namespace Oxide.Plugins
             permission.RegisterPermission(PermissionKick, this);
             permission.RegisterPermission(PermissionUnban, this);
 
-            Interface.Oxide.LogInfo(returnstring);
+            Interface.Oxide.LogInfo(string.Join("\n", returnString.ToArray()));
 
             if (Discord_use && (!IsPluginLoaded(DiscordMessages) || Discord_Webhook.Equals("https://support.discordapp.com/hc/en-us/articles/228383668-Intro-to-Webhooks")))
             {
@@ -1554,25 +1554,23 @@ namespace Oxide.Plugins
 
         string MySQL_Load()
         {
-            string returnstring = string.Empty;
             try
             {
                 Sql_conn = Sql.OpenDb(MySQL_Host, MySQL_Port, MySQL_DB, MySQL_User, MySQL_Pass, this);
                 if (Sql_conn == null || Sql_conn.Con == null)
                 {
-                    returnstring = FormatReturn(BanSystem.MySQL, "Couldn't open the MySQL PlayerDatabase: {0} ", Sql_conn.Con.State.ToString());
+                    return FormatReturn(BanSystem.MySQL, "Couldn't open the MySQL PlayerDatabase: {0} ", Sql_conn.Con.State.ToString());
                 }
                 else
                 {
                     Sql.Insert(Core.Database.Sql.Builder.Append("CREATE TABLE IF NOT EXISTS enhancedbansystem ( `id` int(11) NOT NULL, `steamid` VARCHAR(17),`name` VARCHAR(25),`ip` VARCHAR(15),`reason` VARCHAR(25),`source` VARCHAR(25), `game` VARCHAR(25) , `platform` VARCHAR(25), `server` VARCHAR(25), `expire` int(11) );"), Sql_conn);
-                    returnstring = FormatReturn(BanSystem.MySQL, GetMsg("Loaded"));
+                    return FormatReturn(BanSystem.MySQL, GetMsg("Loaded"));
                 }
             }
             catch (Exception e)
             {
-                returnstring = FormatReturn(BanSystem.MySQL, e.Message);
+                return FormatReturn(BanSystem.MySQL, e.Message);
             }
-            return returnstring;
         }
 
         string MySQL_RawBan(BanData bandata)
@@ -1603,8 +1601,7 @@ namespace Oxide.Plugins
                     Native_ExecuteUnban(id.ToString(), null);
                 }
             }
-            var returnstring = FormatReturn(BanSystem.MySQL, GetMsg("BansRemoved"), unbanList.Count.ToString());
-            SendReply(source, returnstring);
+            SendReply(source, FormatReturn(BanSystem.MySQL, GetMsg("BansRemoved"), unbanList.Count.ToString()));
         }
         string MySQL_ExecuteBan(object source, BanData bandata)
         {
@@ -1621,16 +1618,13 @@ namespace Oxide.Plugins
                         return;
                     }
                 }
-                var reponse2 = MySQL_RawBan(bandata);
-                SendReply(source, reponse2);
+                SendReply(source, MySQL_RawBan(bandata));
             });
-
             return string.Empty;
         }
 
         string MySQL_ExecuteUnban(object source, string steamid, string name, string ip)
         {
-            int i = 0;
             List<int> unbanList = new List<int>();
             if (ip != string.Empty || steamid != string.Empty)
             {
@@ -1642,7 +1636,6 @@ namespace Oxide.Plugins
                         foreach (var entry in list)
                         {
                             unbanList.Add((int)entry["id"]);
-                            i++;
                         }
                     }
                     MySQL_RawUnban(source, unbanList);
@@ -1659,7 +1652,6 @@ namespace Oxide.Plugins
                         {
                             f.Add(entry);
                             unbanList.Add((int)entry["id"]);
-                            i++;
                         }
                     }
                     if (unbanList.Count > 1)
